@@ -1,0 +1,108 @@
+{
+  "tech_tree": [
+    {
+      "id": 1,
+      "name": "星",
+      "cost": {},
+      "dependencies": [],
+      "position": [],
+      "description": []
+    },
+    {
+      "id": 2,
+      "name": "基础冶炼",
+      "cost": {},
+      "dependencies": [],
+      "position": [],
+      "description": []
+    },
+    {
+      "id": 3,
+      "name": "基础制造",
+      "cost": {},
+      "dependencies": [],
+      "position": [],
+      "description": []
+    },
+    {
+      "id": 4,
+      "name": "基础物流系统",
+      "cost": {},
+      "dependencies": [],
+      "position": [],
+      "description": []
+    },
+    {
+      "id": 5,
+      "name": "钢材冶炼",
+      "cost": {},
+      "dependencies": [],
+      "position": [],
+      "description": []
+    },
+    {
+      "id": 6,
+      "name": "高级物流系统",
+      "cost": {},
+      "dependencies": [],
+      "position": [],
+      "description": []
+    },
+    {
+      "id": 7,
+      "name": "行星物流系统",
+      "cost": {},
+      "dependencies": [],
+      "position": [],
+      "description": []
+    },
+    {
+      "id": 8,
+      "name": "星际物流系统",
+      "cost": {},
+      "dependencies": [],
+      "position": [],
+      "description": []
+    },
+    {
+      "id": 9,
+      "name": "填海造陆工程",
+      "cost": {},
+      "dependencies": [],
+      "position": [],
+      "description": []
+    },
+    {
+      "id": 10,
+      "name": "生态恢复工程",
+      "cost": {},
+      "dependencies": [],
+      "position": [],
+      "description": []
+    },
+    {
+      "id": 11,
+      "name": "晶体提纯",
+      "cost": {},
+      "dependencies": [],
+      "position": [],
+      "description": []
+    },
+    {
+      "id": 12,
+      "name": "合金冶炼",
+      "cost": {},
+      "dependencies": [],
+      "position": [],
+      "description": []
+    },
+    {
+      "id": 13,
+      "name": "重氢分馏",
+      "cost": {},
+      "dependencies": [],
+      "position": [],
+      "description": []
+    }
+  ]
+}
