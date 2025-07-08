@@ -1,7 +1,7 @@
+import json
 import os
 import pygame
 import random
-import string
 import sys
 import time
 import numpy as np
@@ -65,8 +65,16 @@ GOODS = {
 }
 
 # 加载所有建筑物图片
-IMGS = {f'{label}_{name}': pygame.image.load(f'./pictures/{name}.png') 
-        for label, names in BUILDINGS.items() for name in names}
+IMGS = {}
+for label, names in BUILDINGS.items():
+    for name in names:
+        try:
+            IMGS[f'{label}_{name}'] = pygame.image.load(f'./pictures/{name}.png')
+        except pygame.error as e:
+            print(f"Error loading image {'./pictures/{name}.png'}: {e}")
+
+with open('tech.json', 'r', encoding='utf-8') as f:
+    TECHS = json.load(f)
 
 class PerlinNoiseGenerator:
     """柏林噪声生成器类，用于生成，正态分布（？）"""
@@ -141,7 +149,8 @@ class PerlinNoiseGenerator:
 
 class GameState:
     """游戏状态枚举类"""
-    start, save, setting, playing, menu = range(5)
+    build, start, save, setting, tech, playing, menu = range(7)
+    transport, storage, electricity, product, mining, research = range(10, 16)
 
 class PlanetMap:
     """行星地图类，管理游戏世界"""
@@ -394,7 +403,8 @@ class Player:
         self.moving_down = False
         self.moving_left = False
         self.moving_right = False
-    
+        self.tech = []
+        
     def change(self, color):
         """改变玩家颜色"""
         if self.color != color:
@@ -413,24 +423,26 @@ class Player:
     def handle_event(self, event):
         """处理玩家移动事件"""
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_w or event.key == pygame.K_UP:
-                self.moving_up = True
-            if event.key == pygame.K_s or event.key == pygame.K_DOWN:
-                self.moving_down = True
-            if event.key == pygame.K_a or event.key == pygame.K_LEFT:
-                self.moving_left = True
-            if event.key == pygame.K_d or event.key == pygame.K_RIGHT:
-                self.moving_right = True
+            if event.mod == pygame.KMOD_NONE:
+                if event.key == pygame.K_w or event.key == pygame.K_UP:
+                    self.moving_up = True
+                if event.key == pygame.K_s or event.key == pygame.K_DOWN:
+                    self.moving_down = True
+                if event.key == pygame.K_a or event.key == pygame.K_LEFT:
+                    self.moving_left = True
+                if event.key == pygame.K_d or event.key == pygame.K_RIGHT:
+                    self.moving_right = True
         
         if event.type == pygame.KEYUP:
-            if event.key == pygame.K_w or event.key == pygame.K_UP:
-                self.moving_up = False
-            if event.key == pygame.K_s or event.key == pygame.K_DOWN:
-                self.moving_down = False
-            if event.key == pygame.K_a or event.key == pygame.K_LEFT:
-                self.moving_left = False
-            if event.key == pygame.K_d or event.key == pygame.K_RIGHT:
-                self.moving_right = False
+            if event.mod == pygame.KMOD_NONE:
+                if event.key == pygame.K_w or event.key == pygame.K_UP:
+                    self.moving_up = False
+                if event.key == pygame.K_s or event.key == pygame.K_DOWN:
+                    self.moving_down = False
+                if event.key == pygame.K_a or event.key == pygame.K_LEFT:
+                    self.moving_left = False
+                if event.key == pygame.K_d or event.key == pygame.K_RIGHT:
+                    self.moving_right = False
     
     def update(self):
         """更新玩家位置"""
@@ -526,13 +538,52 @@ playing_buttons = [
     center=(WIDTH//(i+1), HEIGHT//10*9)) for i in range(6)
 ]
 
+playing_buttons_transport = [
+    Button(FONTS['Deng30'], BUILDINGS[["运输", "储存", "电力", "生产", "采矿", "研究"][i]], 
+    center=(WIDTH//(i+1), HEIGHT//5*4)) for i in range(6)
+]
+
+playing_buttons_storage = [
+    Button(FONTS['Deng30'], BUILDINGS[["运输", "储存", "电力", "生产", "采矿", "研究"][i]], 
+    center=(WIDTH//(i+1), HEIGHT//5*4)) for i in range(6)
+]
+
+playing_buttons_electricity = [
+    Button(FONTS['Deng30'], BUILDINGS[["运输", "储存", "电力", "生产", "采矿", "研究"][i]], 
+    center=(WIDTH//(i+1), HEIGHT//5*4)) for i in range(6)
+]
+
+playing_buttons_product = [
+    Button(FONTS['Deng30'], BUILDINGS[["运输", "储存", "电力", "生产", "采矿", "研究"][i]], 
+    center=(WIDTH//(i+1), HEIGHT//5*4)) for i in range(6)
+]
+
+playing_buttons_mining = [
+    Button(FONTS['Deng30'], BUILDINGS[["运输", "储存", "电力", "生产", "采矿", "研究"][i]], 
+    center=(WIDTH//(i+1), HEIGHT//5*4)) for i in range(6)
+]
+
+playing_buttons_research = [
+    Button(FONTS['Deng30'], BUILDINGS[["运输", "储存", "电力", "生产", "采矿", "研究"][i]], 
+    center=(WIDTH//(i+1), HEIGHT//5*4)) for i in range(6)
+]
+
 # 状态对应的按钮字典
 state_buttons = {
+    GameState.build: playing_buttons,
     GameState.start: start_buttons,
     GameState.save: save_buttons,
     GameState.setting: setting_buttons,
     GameState.menu: menu_buttons,
-    GameState.playing: playing_buttons
+    GameState.playing: playing_buttons,
+    GameState.tech:None,
+    
+    GameState.transport: playing_buttons_transport,
+    GameState.storage: playing_buttons_storage,
+    GameState.electricity: playing_buttons_electricity,
+    GameState.product: playing_buttons_product,
+    GameState.mining: playing_buttons_mining,
+    GameState.research: playing_buttons_research
 }
 
 # 游戏主循环变量初始化 =====================================
@@ -569,16 +620,36 @@ while running:
                         action.append(clicked)
         
         # 键盘事件
-        if event.type in (pygame.KEYDOWN, pygame.KEYUP):
+        if event.type == pygame.KEYDOWN:
             # ESC键处理
             if event.key == pygame.K_ESCAPE:
-                if current_state == GameState.playing:
+                if current_state in (GameState.playing, GameState.build):
                     # 游戏中按ESC打开菜单
                     current_state = GameState.menu
                     past_state = GameState.playing
+                elif current_state in (GameState.menu, GameState.tech):
+                    current_state = GameState.playing
+                    past_state = None
                 else:
                     running = False  # 非游戏状态退出
-            else:
+            if event.key == pygame.K_b:
+                if current_state == GameState.build and past_state == GameState.playing:
+                    current_state = GameState.playing
+                    past_state = None
+                elif current_state == GameState.playing:
+                    current_state = GameState.build
+                    past_state = GameState.playing
+            if event.key == pygame.K_f:
+                pass
+            if event.key == pygame.K_t:
+                if current_state == GameState.tech and past_state == GameState.playing:
+                    current_state = GameState.playing
+                    past_state = None
+                elif current_state == GameState.playing:
+                    current_state = GameState.tech
+                    past_state = GameState.playing
+
+        if event.type in (pygame.KEYDOWN, pygame.KEYUP):
                 # 其他按键传递给地图和玩家
                 if pm:
                     pm.handle_event(event)
@@ -610,7 +681,7 @@ while running:
                 current_state = GameState.playing
     
     # 更新游戏状态
-    if current_state == GameState.playing:
+    if current_state in (GameState.playing, GameState.build):
         if pm:
             pm.update()
         if player:
@@ -620,11 +691,11 @@ while running:
     screen.fill(COLORS["bg"])  # 填充背景色
     
     # 绘制当前状态的UI
-    if current_state != GameState.playing:
+    if state_buttons[current_state]:
         # 绘制按钮
         for b in state_buttons[current_state]:
             b.draw()
-    else:
+    if current_state in (GameState.build, GameState.playing):
         # 游戏状态：绘制地图和玩家
         if pm:
             pm.draw()
@@ -635,7 +706,7 @@ while running:
                             ((0, HEIGHT//11*10), (WIDTH, HEIGHT//11)))
     
     # 显示调试信息
-    state_names = ["开始", "存档", "设置", "游戏中", "菜单"]
+    state_names = ["建造", "开始", "存档", "设置", "科技", "游戏中", "菜单"]
     state_text = FONTS['Deng20'].render(
         f"状态: {state_names[current_state]}", True, (255, 255, 255))
     screen.blit(state_text, (10, 30))
